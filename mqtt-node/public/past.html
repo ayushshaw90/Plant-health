@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sensor Data Display</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+    <style>
+        .chart-container {
+            width: 60%;
+            margin: 20px auto;
+        }
+        .form-container {
+            text-align: center;
+            margin: 20px;
+        }
+        .heading-data {
+            width: fit-content;
+            margin-left: auto;
+            margin-right: auto;
+            padding-top: 20px;
+            padding-bottom: 30px;
+        }
+    </style>
+</head>
+<body>
+
+<!-- Bootstrap Navbar -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="#">Sensor Dashboard</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="index.html">Real-Time Data</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="past.html">Data by Date Range</a>
+                </li>
+            </ul>
+            <span class="navbar-text">
+                Monitor your MQTT-based sensors
+            </span>
+        </div>
+    </div>
+</nav>
+
+<h1 class="heading-data">Sensor Data Display</h1>
+
+<!-- Date-Time Inputs for Range Selection -->
+<div class="form-container">
+    <label for="startTime">Start Time:</label>
+    <input type="datetime-local" id="startTime">
+    
+    <label for="endTime">End Time:</label>
+    <input type="datetime-local" id="endTime">
+    
+    <button onclick="fetchDataForRange()">Fetch Data</button>
+</div>
+
+<div class="chart-container">
+    <canvas id="temperatureChart"></canvas>
+</div>
+<div class="chart-container">
+    <canvas id="soilMoisture1Chart"></canvas>
+</div>
+<div class="chart-container">
+    <canvas id="soilMoisture2Chart"></canvas>
+</div>
+<div class="chart-container">
+    <canvas id="soilMoisture3Chart"></canvas>
+</div>
+<div class="chart-container">
+    <canvas id="humidityChart"></canvas>
+</div>
+
+<script>
+    // Chart.js configuration function for creating line charts
+    function createChart(canvasId, label, labels, data) {
+        return new Chart(document.getElementById(canvasId).getContext('2d'), {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: label,
+                    data: data,
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 2,
+                    fill: false
+                }]
+            },
+            options: {
+                scales: {
+                    x: {
+                        type: 'time',
+                        time: {
+                            unit: 'minute'
+                        },
+                        title: {
+                            display: true,
+                            text: 'Timestamp'
+                        }
+                    },
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    }
+
+    // Initialize the charts
+    let temperatureChart, soilMoisture1Chart, soilMoisture2Chart, soilMoisture3Chart, humidityChart;
+    
+    // Fetch data for the specified range and render charts
+    async function fetchDataForRange() {
+        const startTime = document.getElementById('startTime').value;
+        const endTime = document.getElementById('endTime').value;
+
+        if (!startTime || !endTime) {
+            alert('Please select both start and end times.');
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/entries-in-range?start=${startTime}&end=${endTime}`);
+            const data = await response.json();
+
+            const timestamps = data.map(entry => new Date(entry.timestamp));
+            const temperatures = data.map(entry => entry.temperature);
+            const soilMoisture1 = data.map(entry => entry.soil_moisture1);
+            const soilMoisture2 = data.map(entry => entry.soil_moisture2);
+            const soilMoisture3 = data.map(entry => entry.soil_moisture3);
+            const humidityLevels = data.map(entry => entry.humidity);
+
+            // If charts already exist, destroy them before re-creating
+            if (temperatureChart) temperatureChart.destroy();
+            if (soilMoisture1Chart) soilMoisture1Chart.destroy();
+            if (soilMoisture2Chart) soilMoisture2Chart.destroy();
+            if (soilMoisture3Chart) soilMoisture3Chart.destroy();
+            if (humidityChart) humidityChart.destroy();
+
+            // Create new charts with fetched data
+            temperatureChart = createChart('temperatureChart', 'Temperature (°C)', timestamps, temperatures);
+            soilMoisture1Chart = createChart('soilMoisture1Chart', 'Soil Moisture 1 (%)', timestamps, soilMoisture1);
+            soilMoisture2Chart = createChart('soilMoisture2Chart', 'Soil Moisture 2 (%)', timestamps, soilMoisture2);
+            soilMoisture3Chart = createChart('soilMoisture3Chart', 'Soil Moisture 3 (%)', timestamps, soilMoisture3);
+            humidityChart = createChart('humidityChart', 'Humidity (%)', timestamps, humidityLevels);
+
+        } catch (error) {
+            console.error('Error fetching data:', error);
+            alert('An error occurred while fetching data.');
+        }
+    }
+</script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

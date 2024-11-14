@@ -1,0 +1,19 @@
+{
+  "name": "mqtt-node",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "chartjs-adapter-date-fns": "^3.0.0",
+    "express": "^4.21.1",
+    "mqtt": "^5.10.1",
+    "socket.io": "^4.8.1",
+    "sqlite3": "^5.1.7"
+  }
+}
