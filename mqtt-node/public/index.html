@@ -15,28 +15,44 @@
 </head>
 <body>
 
-<!-- Bootstrap Navbar -->
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="#">Sensor Dashboard</a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav me-auto">
-                <li class="nav-item">
-                    <a class="nav-link" href="index.html">Real-Time Data</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="past.html">Data by Date Range</a>
-                </li>
-            </ul>
-            <span class="navbar-text">
-                Monitor your MQTT-based sensors
-            </span>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">Sensor Dashboard</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="index.html">Real-Time Data</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="past.html">Data by Date Range</a>
+                    </li>
+                    <!-- Individual Sensor Links -->
+                    <li class="nav-item">
+                        <a class="nav-link" href="temperature.html">Temperature Sensor</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="soilMoisture1.html">Soil Moisture 1</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="soilMoisture2.html">Soil Moisture 2</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="soilMoisture3.html">Soil Moisture 3</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="humidity.html">Humidity Sensor</a>
+                    </li>
+                </ul>
+                <span class="navbar-text">
+                    Monitor your MQTT-based sensors
+                </span>
+            </div>
         </div>
-    </div>
-</nav>
+    </nav>
+    
 
 <h1 class="heading-data">Real-Time MQTT Data Display</h1>
 
