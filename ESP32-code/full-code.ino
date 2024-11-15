@@ -24,7 +24,7 @@ const int soilMoisturePin2 = 35;
 const int soilMoisturePin3 = 32;
 
 // DHT11 sensor pin and type
-#define DHTPIN 22
+#define DHTPIN 14
 #define DHTTYPE DHT11
 
 DHT dht(DHTPIN, DHTTYPE);
@@ -83,9 +83,9 @@ void loop() {
   float soilMoisture3 = analogRead(soilMoisturePin3);
 
   // Scale soil moisture values to percentage (assuming ADC is 12-bit resolution)
-  soilMoisture1 = map(soilMoisture1, 0, 4095, 0, 100);
-  soilMoisture2 = map(soilMoisture2, 0, 4095, 0, 100);
-  soilMoisture3 = map(soilMoisture3, 0, 4095, 0, 100);
+  soilMoisture1 = 100-map(soilMoisture1, 0, 4095, 0, 100);
+  soilMoisture2 = 100-map(soilMoisture2, 0, 4095, 0, 100);
+  soilMoisture3 = 100-map(soilMoisture3, 0, 4095, 0, 100);
 
   // Read temperature and humidity from DHT11 sensor
   float temperature = dht.readTemperature();
