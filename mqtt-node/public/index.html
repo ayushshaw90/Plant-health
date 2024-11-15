@@ -10,6 +10,72 @@
     <style>
         .chart-container { margin: 20px auto; }
     </style>
+    <script>
+        if ('serviceWorker' in navigator && 'PushManager' in window) {
+            navigator.serviceWorker.register('/service-worker.js')
+                .then((registration) => {
+                    console.log('Service Worker registered:', registration);
+                    checkNotificationPermission(registration);
+                })
+                .catch((error) => console.error('Service Worker registration failed:', error));
+        } else {
+            console.warn('Push messaging is not supported');
+        }
+    
+        function checkNotificationPermission(registration) {
+            // Check and request permission if needed
+            if (Notification.permission === 'default') {
+                Notification.requestPermission().then((permission) => {
+                    if (permission === 'granted') {
+                        subscribeToPushNotifications(registration);
+                    } else {
+                        console.warn('Notifications permission denied');
+                    }
+                });
+            } else if (Notification.permission === 'granted') {
+                subscribeToPushNotifications(registration);
+            } else {
+                console.warn('Notifications are blocked by the user.');
+            }
+        }
+    
+        function subscribeToPushNotifications(registration) {
+            registration.pushManager.getSubscription()
+                .then((subscription) => {
+                    if (!subscription) {
+                        const applicationServerKey = urlBase64ToUint8Array('YOUR_VAPID_PUBLIC_KEY');
+                        return registration.pushManager.subscribe({
+                            userVisibleOnly: true,
+                            applicationServerKey
+                        });
+                    }
+                    return subscription;
+                })
+                .then((subscription) => {
+                    return fetch('/subscribe', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(subscription)
+                    });
+                })
+                .then(() => {
+                    console.log('User is subscribed to push notifications.');
+                })
+                .catch((error) => console.error('Subscription failed:', error));
+        }
+    
+        function urlBase64ToUint8Array(base64String) {
+            const padding = '='.repeat((4 - base64String.length % 4) % 4);
+            const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+            const rawData = window.atob(base64);
+            const outputArray = new Uint8Array(rawData.length);
+            for (let i = 0; i < rawData.length; ++i) {
+                outputArray[i] = rawData.charCodeAt(i);
+            }
+            return outputArray;
+        }
+    </script>
+    
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
@@ -131,5 +197,115 @@
             padding-bottom: 30px;
         }
     </style>
+    <!-- <script>
+        if ('serviceWorker' in navigator && 'PushManager' in window) {
+            navigator.serviceWorker.register('/service-worker.js')
+                .then((registration) => {
+                    console.log('Service Worker registered:', registration);
+    
+                    return registration.pushManager.getSubscription()
+                        .then((subscription) => {
+                            if (!subscription) {
+                                // Ask user permission to send notifications
+                                return registration.pushManager.subscribe({
+                                    userVisibleOnly: true,
+                                    applicationServerKey: 'BK8kkHi6PeNeeIB1NkyZv-U96j60cHlaEW-0Aq2NqJFLWtHCLoA14Rr_vYTxAE8i4TROvgJRddUnB7yUsFC4SU8'
+                                });
+                            }
+                            return subscription;
+                        });
+                })
+                .then((subscription) => {
+                    // Send subscription to the server
+                    fetch('/subscribe', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(subscription)
+                    });
+                    console.log('Subscribed to push notifications:', subscription);
+                })
+                .catch((error) => console.error('Push subscription error:', error));
+        } else {
+            console.warn('Push messaging is not supported');
+        }
+    </script> -->
+
+<!-- <script>
+    // Check if service workers and push notifications are supported
+    if ('serviceWorker' in navigator && 'PushManager' in window) {
+        navigator.serviceWorker.register('/service-worker.js')
+            .then((registration) => {
+                console.log('Service Worker registered:', registration);
+
+                // Check for permission to send notifications
+                if (Notification.permission === 'default') {
+                    requestNotificationPermission(registration);
+                } else if (Notification.permission === 'granted') {
+                    subscribeToPushNotifications(registration);
+                } else {
+                    console.warn('Notifications are blocked by the user.');
+                }
+            })
+            .catch((error) => console.error('Service Worker registration failed:', error));
+    } else {
+        console.warn('Push messaging is not supported');
+    }
+
+    // Function to request permission for notifications
+    function requestNotificationPermission(registration) {
+        Notification.requestPermission().then((permission) => {
+            if (permission === 'granted') {
+                subscribeToPushNotifications(registration);
+            } else {
+                console.warn('Notifications permission denied');
+            }
+        });
+    }
+
+    // Function to subscribe for push notifications
+    function subscribeToPushNotifications(registration) {
+        registration.pushManager.getSubscription()
+            .then((subscription) => {
+                if (!subscription) {
+                    // Subscribe the user
+                    const applicationServerKey = urlBase64ToUint8Array('BK8kkHi6PeNeeIB1NkyZv-U96j60cHlaEW-0Aq2NqJFLWtHCLoA14Rr_vYTxAE8i4TROvgJRddUnB7yUsFC4SU8');
+                    return registration.pushManager.subscribe({
+                        userVisibleOnly: true,
+                        applicationServerKey
+                    });
+                }
+                return subscription;
+            })
+            .then((subscription) => {
+                // Send subscription to the server
+                fetch('/subscribe', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(subscription)
+                });
+                console.log('User is subscribed to push notifications:', subscription);
+            })
+            .catch((error) => console.error('Failed to subscribe for push notifications:', error));
+    }
+
+    // Helper function to convert the VAPID key to a UInt8Array
+    function urlBase64ToUint8Array(base64String) {
+        const padding = '='.repeat((4 - base64String.length % 4) % 4);
+        const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+        const rawData = window.atob(base64);
+        const outputArray = new Uint8Array(rawData.length);
+
+        for (let i = 0; i < rawData.length; ++i) {
+            outputArray[i] = rawData.charCodeAt(i);
+        }
+        return outputArray;
+    }
+</script> -->
+
+    
 </body>
 </html>

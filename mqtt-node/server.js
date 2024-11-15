@@ -60,6 +60,7 @@ mqttClient.on('message', (topic, message) => {
     console.log(`MQTT message from "${topic}": ${message.toString()}`);
     const timestamp = new Date().toISOString();
     const value = parseFloat(message.toString());
+    
 
     let column;
     if (topic === 'esp32/temperature') column = 'temperature';
@@ -67,7 +68,8 @@ mqttClient.on('message', (topic, message) => {
     else if (topic === 'esp32/soil1') column = 'soil_moisture1';
     else if (topic === 'esp32/soil2') column = 'soil_moisture2';
     else if (topic === 'esp32/soil3') column = 'soil_moisture3';
-    console.log(`Column-name: ${column}`)
+    // console.log(`Column-name: ${column}`)
+    console.log(`Column-name: ${column} Value: ${value}`)
     if (column) {
         db.run(`INSERT INTO sensor_data (${column}, timestamp) VALUES (?, ?)`, [value, timestamp], (err) => {
             if (err) return console.error('Error inserting data:', err.message);
@@ -76,14 +78,18 @@ mqttClient.on('message', (topic, message) => {
 
         // Emit real-time data via Socket.IO
         io.emit(`${column}`, { [column]: value, timestamp });
-
+        // console.log(`value: ${value}`)
         // Send notification if temperature exceeds threshold
-        if (column === 'temperature' && value > 40) sendTemperatureAlert(value);
+        if (column === 'temperature' && value > 40){
+             sendTemperatureAlert(value);
+             console.log("calling sendTemperatureAlert")
+        }
     }
 });
 
 // Function to send push notification
 const sendTemperatureAlert = (temperature) => {
+    console.log("sending notification")
     const payload = JSON.stringify({
         title: 'Temperature Alert!',
         body: `Temperature exceeded 40°C! Current: ${temperature}°C`
@@ -116,5 +122,5 @@ io.on('connection', (socket) => {
 });
 
 // Start server
-const PORT = 3000;
+const PORT = 3400;
 server.listen(PORT, '0.0.0.0', () => console.log(`Server running on http://localhost:${PORT}`));

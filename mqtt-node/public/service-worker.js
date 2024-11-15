@@ -31,7 +31,25 @@ self.addEventListener('push', event => {
     const data = event.data.json();
     self.registration.showNotification(data.title, {
         body: data.body,
-        icon: '/icons/icon-128x128.png'
+        icon: '/icons/icon-128.png'
     });
+});
+
+self.addEventListener("push", event => {
+    const data = event.data.json();
+    const options = {
+        body: data.body,
+        icon: '/icons/icon-128.png',
+        badge: '/icons/badge-128.png'
+    };
+    
+    if (Notification.permission === "granted") {
+        event.waitUntil(
+            self.registration.showNotification(data.title || "Sensor Alert", options)
+        );
+    } else {
+        console.warn("Push notification not shown because permission is not granted.");
+    
+    }
 });
 
