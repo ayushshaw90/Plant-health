@@ -12,6 +12,8 @@
             margin: 20px auto;
         }
     </style>
+    <link rel="manifest" href="/manifest.json">
+
 </head>
 <body>
 
@@ -160,5 +162,42 @@
         padding-bottom: 30px;
     }
 </style>
+<!-- <script>
+    if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+            navigator.serviceWorker.register("/service-worker.js").then(
+                (registration) => {
+                    console.log("Service Worker registered with scope:", registration.scope);
+                },
+                (error) => {
+                    console.log("Service Worker registration failed:", error);
+                }
+            );
+        });
+    }
+</script> -->
+<script>
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/service-worker.js').then(reg => {
+            Notification.requestPermission().then(permission => {
+                if (permission === 'granted') {
+                    reg.pushManager.subscribe({
+                        userVisibleOnly: true,
+                        applicationServerKey: 'BF8lUY6R8JV5NxJh6nQyJ4C4MTMYaelyj1E_WDHJZuJyArrkuSK3Y2latYwky3DaSmN9_oJS-wXuUPvo_fCXomc'
+                    }).then(sub => {
+                        fetch('/subscribe', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(sub)
+                        });
+                    });
+                }
+            });
+        });
+    }
+</script>
+
+
+
 </body>
 </html>
