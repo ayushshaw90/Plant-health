@@ -15,8 +15,8 @@ app.use(bodyParser.json());
 
 // VAPID keys for Web Push
 const vapidKeys = {
-    publicKey: 'BF8lUY6R8JV5NxJh6nQyJ4C4MTMYaelyj1E_WDHJZuJyArrkuSK3Y2latYwky3DaSmN9_oJS-wXuUPvo_fCXomc',
-    privateKey: 'KDjsTlaPwhIyJOyldG-ybcDgeiS8WHND8hJP7kRzrEk>'
+    publicKey: 'BK8kkHi6PeNeeIB1NkyZv-U96j60cHlaEW-0Aq2NqJFLWtHCLoA14Rr_vYTxAE8i4TROvgJRddUnB7yUsFC4SU8',
+    privateKey: 'WwUr8hkJK171W78Bh5_0MLpa5r11oRKcBcAAjqZLVGY'
 };
 
 webpush.setVapidDetails(
@@ -53,36 +53,32 @@ db.serialize(() => {
 const mqttClient = mqtt.connect('mqtt://broker.hivemq.com');
 mqttClient.on('connect', () => {
     console.log('Connected to MQTT broker');
-    mqttClient.subscribe(['esp32/temperature', 'esp32/humidity', 'esp32/soil1', 'esp32/soil2', 'esp32/soil3', 'esp32/sensorData']);
+    mqttClient.subscribe(['esp32/temperature', 'esp32/humidity', 'esp32/soil1', 'esp32/soil2', 'esp32/soil3']);
 });
 
 mqttClient.on('message', (topic, message) => {
     console.log(`MQTT message from "${topic}": ${message.toString()}`);
     const timestamp = new Date().toISOString();
+    const value = parseFloat(message.toString());
 
-    let data;
-    try {
-        data = (topic === 'esp32/sensorData') ? JSON.parse(message) : { [topic.split('/')[1]]: parseFloat(message), timestamp };
-        const { temperature = null, humidity = null, soil_moisture1 = null, soil_moisture2 = null, soil_moisture3 = null } = data;
+    let column;
+    if (topic === 'esp32/temperature') column = 'temperature';
+    else if (topic === 'esp32/humidity') column = 'humidity';
+    else if (topic === 'esp32/soil1') column = 'soil_moisture1';
+    else if (topic === 'esp32/soil2') column = 'soil_moisture2';
+    else if (topic === 'esp32/soil3') column = 'soil_moisture3';
+    console.log(`Column-name: ${column}`)
+    if (column) {
+        db.run(`INSERT INTO sensor_data (${column}, timestamp) VALUES (?, ?)`, [value, timestamp], (err) => {
+            if (err) return console.error('Error inserting data:', err.message);
+            console.log('Data inserted');
+        });
 
-        // Insert into database
-        db.run(`INSERT INTO sensor_data (temperature, humidity, soil_moisture1, soil_moisture2, soil_moisture3, timestamp) VALUES (?, ?, ?, ?, ?, ?)`,
-            [temperature, humidity, soil_moisture1, soil_moisture2, soil_moisture3, timestamp], (err) => {
-                if (err) return console.error('Error inserting data:', err.message);
-                console.log('Data inserted');
-            });
-
-        // Real-time data via Socket.IO
-        if (temperature) io.emit('temperatureData', { temperature, timestamp });
-        if (humidity) io.emit('humidityData', { humidity, timestamp });
-        if (soil_moisture1) io.emit('soilMoisture1Data', { soil_moisture1, timestamp });
-        if (soil_moisture2) io.emit('soilMoisture2Data', { soil_moisture2, timestamp });
-        if (soil_moisture3) io.emit('soilMoisture3Data', { soil_moisture3, timestamp });
+        // Emit real-time data via Socket.IO
+        io.emit(`${column}`, { [column]: value, timestamp });
 
         // Send notification if temperature exceeds threshold
-        if (temperature > 40) sendTemperatureAlert(temperature);
-    } catch (error) {
-        console.error('Error parsing MQTT message:', error);
+        if (column === 'temperature' && value > 40) sendTemperatureAlert(value);
     }
 });
 

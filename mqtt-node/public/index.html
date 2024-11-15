@@ -8,15 +8,10 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script> <!-- Date adapter for time axis -->
     <style>
-        .chart-container {
-            margin: 20px auto;
-        }
+        .chart-container { margin: 20px auto; }
     </style>
-    <link rel="manifest" href="/manifest.json">
-
 </head>
 <body>
-
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container-fluid">
             <a class="navbar-brand" href="#">Sensor Dashboard</a>
@@ -25,179 +20,116 @@
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="index.html">Real-Time Data</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="past.html">Data by Date Range</a>
-                    </li>
+                    <li class="nav-item"><a class="nav-link" href="index.html">Real-Time Data</a></li>
+                    <!-- <li class="nav-item"><a class="nav-link" href="past.html">Data by Date Range</a></li> -->
                     <!-- Individual Sensor Links -->
-                    <li class="nav-item">
-                        <a class="nav-link" href="temperature.html">Temperature Sensor</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="soilMoisture1.html">Soil Moisture 1</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="soilMoisture2.html">Soil Moisture 2</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="soilMoisture3.html">Soil Moisture 3</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="humidity.html">Humidity Sensor</a>
-                    </li>
+                    <li class="nav-item"><a class="nav-link" href="temperature.html">Temperature Sensor</a></li>
+                    <li class="nav-item"><a class="nav-link" href="soilMoisture1.html">Soil Moisture 1</a></li>
+                    <li class="nav-item"><a class="nav-link" href="soilMoisture2.html">Soil Moisture 2</a></li>
+                    <li class="nav-item"><a class="nav-link" href="soilMoisture3.html">Soil Moisture 3</a></li>
+                    <li class="nav-item"><a class="nav-link" href="humidity.html">Humidity Sensor</a></li>
                 </ul>
-                <span class="navbar-text">
-                    Monitor your MQTT-based sensors
-                </span>
+                <span class="navbar-text">Monitor your MQTT-based sensors</span>
             </div>
         </div>
     </nav>
     
+    <h1 class="heading-data">Real-Time MQTT Data Display</h1>
 
-<h1 class="heading-data">Real-Time MQTT Data Display</h1>
-
-<!-- Responsive Chart Layout -->
-<div class="container">
-    <div class="row">
-        <div class="col-md-4 chart-container">
-            <canvas id="temperatureChart"></canvas>
-        </div>
-        <div class="col-md-4 chart-container">
-            <canvas id="soilMoistureChart1"></canvas>
-        </div>
-        <div class="col-md-4 chart-container">
-            <canvas id="soilMoistureChart2"></canvas>
-        </div>
-        <div class="col-md-4 chart-container">
-            <canvas id="soilMoistureChart3"></canvas>
-        </div>
-        <div class="col-md-4 chart-container">
-            <canvas id="humidityChart"></canvas>
+    <!-- Responsive Chart Layout -->
+    <div class="container">
+        <div class="row">
+            <div class="col-md-4 chart-container"><canvas id="temperatureChart"></canvas></div>
+            <div class="col-md-4 chart-container"><canvas id="soilMoistureChart1"></canvas></div>
+            <div class="col-md-4 chart-container"><canvas id="soilMoistureChart2"></canvas></div>
+            <div class="col-md-4 chart-container"><canvas id="soilMoistureChart3"></canvas></div>
+            <div class="col-md-4 chart-container"><canvas id="humidityChart"></canvas></div>
         </div>
     </div>
-</div>
 
-<!-- Load Socket.IO -->
-<script src="/socket.io/socket.io.js"></script>
-<script>
-    const socket = io();
+    <!-- Load Socket.IO -->
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
 
-    // Function to create a new Chart.js line chart
-    const createChart = (ctx, label) => new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: [], // Timestamps will be added here
-            datasets: [{
-                label: label,
-                data: [], // Data values
-                borderColor: 'rgba(75, 192, 192, 1)',
-                borderWidth: 2,
-                fill: false
-            }]
-        },
-        options: {
-            scales: {
-                x: { 
-                    type: 'time', 
-                    title: { display: true, text: 'Time' },
-                    time: { unit: 'minute' } // Configure time unit as needed
-                },
-                y: { 
-                    beginAtZero: true 
+        // Function to create a new Chart.js line chart
+        const createChart = (ctx, label) => new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: label,
+                    data: [],
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 2,
+                    fill: false
+                }]
+            },
+            options: {
+                scales: {
+                    x: { 
+                        type: 'time', 
+                        title: { display: true, text: 'Time' },
+                        time: { unit: 'minute' }
+                    },
+                    y: { beginAtZero: true }
                 }
             }
-        }
-    });
+        });
 
-    // Initialize charts for temperature, soil moisture, and humidity
-    const temperatureChart = createChart(document.getElementById('temperatureChart').getContext('2d'), 'Temperature (°C)');
-    const soilMoistureChart1 = createChart(document.getElementById('soilMoistureChart1').getContext('2d'), 'Soil Moisture 1 (%)');
-    const soilMoistureChart2 = createChart(document.getElementById('soilMoistureChart2').getContext('2d'), 'Soil Moisture 2 (%)');
-    const soilMoistureChart3 = createChart(document.getElementById('soilMoistureChart3').getContext('2d'), 'Soil Moisture 3 (%)');
-    const humidityChart = createChart(document.getElementById('humidityChart').getContext('2d'), 'Humidity (%)');
+        // Initialize charts for temperature, soil moisture, and humidity
+        const temperatureChart = createChart(document.getElementById('temperatureChart').getContext('2d'), 'Temperature (°C)');
+        const soilMoistureChart1 = createChart(document.getElementById('soilMoistureChart1').getContext('2d'), 'Soil Moisture 1 (%)');
+        const soilMoistureChart2 = createChart(document.getElementById('soilMoistureChart2').getContext('2d'), 'Soil Moisture 2 (%)');
+        const soilMoistureChart3 = createChart(document.getElementById('soilMoistureChart3').getContext('2d'), 'Soil Moisture 3 (%)');
+        const humidityChart = createChart(document.getElementById('humidityChart').getContext('2d'), 'Humidity (%)');
 
-    // Listen for initial data (last 30 entries)
-    socket.on('initialData', (dataArray) => {
-        dataArray.forEach(data => {
+        // Update each chart individually with live data
+        const updateChart = (chart, timestamp, value) => {
+            if (chart.data.labels.length >= 30) {
+                chart.data.labels.shift();
+                chart.data.datasets[0].data.shift();
+            }
+            chart.data.labels.push(timestamp);
+            chart.data.datasets[0].data.push(value);
+            chart.update();
+        };
+
+        // Listen for live data via Socket.IO for each sensor type
+        socket.on('temperature', (data) => {
             const timestamp = new Date(data.timestamp);
             updateChart(temperatureChart, timestamp, data.temperature);
+        });
+
+        socket.on('soil_moisture1', (data) => {
+            const timestamp = new Date(data.timestamp);
             updateChart(soilMoistureChart1, timestamp, data.soil_moisture1);
+        });
+
+        socket.on('soil_moisture2', (data) => {
+            const timestamp = new Date(data.timestamp);
             updateChart(soilMoistureChart2, timestamp, data.soil_moisture2);
+        });
+
+        socket.on('soil_moisture3', (data) => {
+            const timestamp = new Date(data.timestamp);
             updateChart(soilMoistureChart3, timestamp, data.soil_moisture3);
+        });
+
+        socket.on('humidity', (data) => {
+            const timestamp = new Date(data.timestamp);
             updateChart(humidityChart, timestamp, data.humidity);
         });
-    });
-
-    // Listen for live data via Socket.IO
-    socket.on('mqttMessage', (data) => {
-        const timestamp = new Date(data.timestamp);
-        updateChart(temperatureChart, timestamp, data.temperature);
-        updateChart(soilMoistureChart1, timestamp, data.soil_moisture1);
-        updateChart(soilMoistureChart2, timestamp, data.soil_moisture2);
-        updateChart(soilMoistureChart3, timestamp, data.soil_moisture3);
-        updateChart(humidityChart, timestamp, data.humidity);
-    });
-
-    // Function to update the chart with new data
-    const updateChart = (chart, timestamp, value) => {
-        if (chart.data.labels.length >= 30) {
-            chart.data.labels.shift();
-            chart.data.datasets[0].data.shift();
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <style>
+        .heading-data {
+            width: fit-content;
+            margin: auto;
+            padding-top: 20px;
+            padding-bottom: 30px;
         }
-        chart.data.labels.push(timestamp);
-        chart.data.datasets[0].data.push(value);
-        chart.update();
-    };
-</script>
-<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
-<style>
-    .heading-data {
-        width: fit-content;
-        margin-left: auto;
-        margin-right: auto;
-        padding-top: 20px;
-        padding-bottom: 30px;
-    }
-</style>
-<!-- <script>
-    if ("serviceWorker" in navigator) {
-        window.addEventListener("load", () => {
-            navigator.serviceWorker.register("/service-worker.js").then(
-                (registration) => {
-                    console.log("Service Worker registered with scope:", registration.scope);
-                },
-                (error) => {
-                    console.log("Service Worker registration failed:", error);
-                }
-            );
-        });
-    }
-</script> -->
-<script>
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('/service-worker.js').then(reg => {
-            Notification.requestPermission().then(permission => {
-                if (permission === 'granted') {
-                    reg.pushManager.subscribe({
-                        userVisibleOnly: true,
-                        applicationServerKey: 'BF8lUY6R8JV5NxJh6nQyJ4C4MTMYaelyj1E_WDHJZuJyArrkuSK3Y2latYwky3DaSmN9_oJS-wXuUPvo_fCXomc'
-                    }).then(sub => {
-                        fetch('/subscribe', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(sub)
-                        });
-                    });
-                }
-            });
-        });
-    }
-</script>
-
-
-
+    </style>
 </body>
 </html>
