@@ -3,20 +3,20 @@
 #include <DHT.h>
 
 // Wi-Fi credentials
-const char* ssid = "Orange";
-const char* password = "shawayush3";
+const char* ssid = "iQOO Neo7";
+const char* password = "avihotspot";
 
 // HiveMQ public broker details
-const char* mqtt_broker = "broker.hivemq.com";
+const char* mqtt_broker = "mqtt.eclipseprojects.io";
 const int mqtt_port = 1883;
 
 // MQTT topics
-const char* mqtt_topic = "esp32/sensorData";
-const char* temperature_topic = "esp32/temperature";
-const char* humidity_topic = "esp32/humidity";
-const char* soilMoisture1_topic = "esp32/soil1";
-const char* soilMoisture2_topic = "esp32/soil2";
-const char* soilMoisture3_topic = "esp32/soil3";
+const char* mqtt_topic = "plant/sensorData";
+const char* temperature_topic = "plant/temperature";
+const char* humidity_topic = "plant/humidity";
+const char* soilMoisture1_topic = "plant/soil1";
+const char* soilMoisture2_topic = "plant/soil2";
+const char* soilMoisture3_topic = "plant/soil3";
 
 // Soil moisture sensor pins
 const int soilMoisturePin1 = 34;
@@ -98,18 +98,18 @@ void loop() {
   }
 
   // Create a JSON payload to send multiple data fields
-  String payload = "{\"temperature\": " + String(temperature) + 
-                   ", \"humidity\": " + String(humidity) + 
-                   ", \"soil_moisture1\": " + String(soilMoisture1) + 
-                   ", \"soil_moisture2\": " + String(soilMoisture2) + 
-                   ", \"soil_moisture3\": " + String(soilMoisture3) + "}";
+  // String payload = "{\"temperature\": " + String(temperature) + 
+  //                  ", \"humidity\": " + String(humidity) + 
+  //                  ", \"soil_moisture1\": " + String(soilMoisture1) + 
+  //                  ", \"soil_moisture2\": " + String(soilMoisture2) + 
+  //                  ", \"soil_moisture3\": " + String(soilMoisture3) + "}";
 
   // Publish individual sensor data to respective topics
-  client.publish(temperature_topic, String(temperature).c_str());
-  client.publish(humidity_topic, String(humidity).c_str());
-  client.publish(soilMoisture1_topic, String(soilMoisture1).c_str());
-  client.publish(soilMoisture2_topic, String(soilMoisture2).c_str());
-  client.publish(soilMoisture3_topic, String(soilMoisture3).c_str());
+  bool s1 = client.publish(temperature_topic, String(temperature).c_str());
+  bool s2 = client.publish(humidity_topic, String(humidity).c_str());
+  bool s3 = client.publish(soilMoisture1_topic, String(soilMoisture1).c_str());
+  bool s4 = client.publish(soilMoisture2_topic, String(soilMoisture2).c_str());
+  bool s5 = client.publish(soilMoisture3_topic, String(soilMoisture3).c_str());
 
   // Publish the JSON data to the combined topic
   Serial.print("Publishing message: ");
@@ -117,8 +117,13 @@ void loop() {
 
   bool success = client.publish(mqtt_topic, payload.c_str());
 
-  if (success) {
-    Serial.println("Message published successfully to HiveMQ!");
+  if (s1) {
+    Serial.println("temperature published successfully to HiveMQ!");
+  } else {
+    Serial.println("Failed to publish message to HiveMQ!");
+  }
+  if (s2) {
+    Serial.println("humidity published successfully to HiveMQ!");
   } else {
     Serial.println("Failed to publish message to HiveMQ!");
   }
