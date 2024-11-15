@@ -50,10 +50,10 @@ db.serialize(() => {
 });
 
 // MQTT setup
-const mqttClient = mqtt.connect('mqtt://broker.hivemq.com');
+const mqttClient = mqtt.connect('mqtt://mqtt.eclipseprojects.io');
 mqttClient.on('connect', () => {
     console.log('Connected to MQTT broker');
-    mqttClient.subscribe(['esp32/temperature', 'esp32/humidity', 'esp32/soil1', 'esp32/soil2', 'esp32/soil3']);
+    mqttClient.subscribe(['plant/temperature', 'plant/humidity', 'plant/soil1', 'plant/soil2', 'plant/soil3']);
 });
 
 mqttClient.on('message', (topic, message) => {
@@ -63,11 +63,11 @@ mqttClient.on('message', (topic, message) => {
     
 
     let column;
-    if (topic === 'esp32/temperature') column = 'temperature';
-    else if (topic === 'esp32/humidity') column = 'humidity';
-    else if (topic === 'esp32/soil1') column = 'soil_moisture1';
-    else if (topic === 'esp32/soil2') column = 'soil_moisture2';
-    else if (topic === 'esp32/soil3') column = 'soil_moisture3';
+    if (topic === 'plant/temperature') column = 'temperature';
+    else if (topic === 'plant/humidity') column = 'humidity';
+    else if (topic === 'plant/soil1') column = 'soil_moisture1';
+    else if (topic === 'plant/soil2') column = 'soil_moisture2';
+    else if (topic === 'plant/soil3') column = 'soil_moisture3';
     // console.log(`Column-name: ${column}`)
     console.log(`Column-name: ${column} Value: ${value}`)
     if (column) {

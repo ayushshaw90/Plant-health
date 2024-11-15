@@ -43,7 +43,7 @@
             registration.pushManager.getSubscription()
                 .then((subscription) => {
                     if (!subscription) {
-                        const applicationServerKey = urlBase64ToUint8Array('YOUR_VAPID_PUBLIC_KEY');
+                        const applicationServerKey = urlBase64ToUint8Array('BK8kkHi6PeNeeIB1NkyZv-U96j60cHlaEW-0Aq2NqJFLWtHCLoA14Rr_vYTxAE8i4TROvgJRddUnB7yUsFC4SU8');
                         return registration.pushManager.subscribe({
                             userVisibleOnly: true,
                             applicationServerKey
