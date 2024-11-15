@@ -28,21 +28,41 @@ db.serialize(() => {
 });
 
 // MQTT setup
-const mqttClient = mqtt.connect('mqtt://broker.hivemq.com'); // Use your broker URL here
+const mqttClient = mqtt.connect('mqtt://broker.hivemq.com');
 
 mqttClient.on('connect', () => {
     console.log('Connected to MQTT broker');
-    mqttClient.subscribe('esp32/sensorData'); // Subscribe to a topic
+    mqttClient.subscribe('esp32/temperature');
+    mqttClient.subscribe('esp32/humidity');
+    mqttClient.subscribe('esp32/soil1');
+    mqttClient.subscribe('esp32/soil2');
+    mqttClient.subscribe('esp32/soil3');
+    mqttClient.subscribe('esp32/sensorData'); // Combined topic
 });
 
 mqttClient.on('message', (topic, message) => {
     console.log(`MQTT message received from topic "${topic}": ${message.toString()}`);
+    const timestamp = new Date().toISOString();
+
     try {
-        const data = JSON.parse(message.toString());
-        const { temperature, humidity, soil_moisture1, soil_moisture2, soil_moisture3 } = data;
-        
-        // Get the current timestamp
-        const timestamp = new Date().toISOString(); // Store in ISO format
+        let data;
+
+        // Parse JSON from the combined topic or handle individual topics
+        if (topic === 'esp32/sensorData') {
+            data = JSON.parse(message.toString());
+        } else {
+            data = {};
+            data.timestamp = timestamp;
+
+            // Assign values based on the topic
+            if (topic === 'esp32/temperature') data.temperature = parseFloat(message);
+            if (topic === 'esp32/humidity') data.humidity = parseFloat(message);
+            if (topic === 'esp32/soil1') data.soil_moisture1 = parseFloat(message);
+            if (topic === 'esp32/soil2') data.soil_moisture2 = parseFloat(message);
+            if (topic === 'esp32/soil3') data.soil_moisture3 = parseFloat(message);
+        }
+
+        const { temperature = null, humidity = null, soil_moisture1 = null, soil_moisture2 = null, soil_moisture3 = null } = data;
 
         // Insert data along with timestamp into the SQLite database
         db.run(
@@ -56,8 +76,18 @@ mqttClient.on('message', (topic, message) => {
             }
         );
 
-        // Broadcast the message to all connected web clients via Socket.IO, including the timestamp
-        io.emit('mqttMessage', { ...data, timestamp });
+        // Broadcast real-time data to specific Socket.IO channels based on the sensor
+        if (topic === 'esp32/temperature') {
+            io.emit('temperatureData', { temperature, timestamp });
+        } else if (topic === 'esp32/humidity') {
+            io.emit('humidityData', { humidity, timestamp });
+        } else if (topic === 'esp32/soil1') {
+            io.emit('soilMoisture1Data', { soil_moisture1, timestamp });
+        } else if (topic === 'esp32/soil2') {
+            io.emit('soilMoisture2Data', { soil_moisture2, timestamp });
+        } else if (topic === 'esp32/soil3') {
+            io.emit('soilMoisture3Data', { soil_moisture3, timestamp });
+        }
     } catch (error) {
         console.error('Error parsing MQTT message:', error);
     }
@@ -67,50 +97,26 @@ mqttClient.on('message', (topic, message) => {
 io.on('connection', (socket) => {
     console.log('New client connected');
 
-    // Retrieve the last 30 entries from the database and send them to the client
-    db.all(`SELECT * FROM sensor_data ORDER BY timestamp DESC LIMIT 3
-    
-    0`, (err, rows) => {
-        if (err) {
-            return console.error('Error retrieving data:', err.message);
-        }
-        // Send the last 30 entries in chronological order
-        socket.emit('initialData', rows.reverse());
-    });
+    // Retrieve the last 30 entries for each sensor and send them to the client
+    const sendInitialData = (sensor, query, event) => {
+        db.all(query, (err, rows) => {
+            if (err) {
+                return console.error(`Error retrieving ${sensor} data:`, err.message);
+            }
+            // Send data in chronological order
+            socket.emit(event, rows.reverse());
+        });
+    };
 
-    // Send live data to the client as it arrives
+    sendInitialData('temperature', `SELECT temperature, timestamp FROM sensor_data WHERE temperature IS NOT NULL ORDER BY timestamp DESC LIMIT 30`, 'initialTemperatureData');
+    sendInitialData('humidity', `SELECT humidity, timestamp FROM sensor_data WHERE humidity IS NOT NULL ORDER BY timestamp DESC LIMIT 30`, 'initialHumidityData');
+    sendInitialData('soil1', `SELECT soil_moisture1, timestamp FROM sensor_data WHERE soil_moisture1 IS NOT NULL ORDER BY timestamp DESC LIMIT 30`, 'initialSoilMoisture1Data');
+    sendInitialData('soil2', `SELECT soil_moisture2, timestamp FROM sensor_data WHERE soil_moisture2 IS NOT NULL ORDER BY timestamp DESC LIMIT 30`, 'initialSoilMoisture2Data');
+    sendInitialData('soil3', `SELECT soil_moisture3, timestamp FROM sensor_data WHERE soil_moisture3 IS NOT NULL ORDER BY timestamp DESC LIMIT 30`, 'initialSoilMoisture3Data');
+
     socket.on('disconnect', () => {
         console.log('Client disconnected');
     });
-});
-
-// Define an API endpoint to retrieve the last 6 responses
-app.get('/api/last-6-entries', (req, res) => {
-    db.all(`SELECT * FROM sensor_data ORDER BY timestamp DESC LIMIT 6`, (err, rows) => {
-        if (err) {
-            console.error('Error retrieving data:', err.message);
-            res.status(500).json({ error: 'Failed to retrieve data' });
-        } else {
-            res.json(rows.reverse()); // Send data in chronological order
-        }
-    });
-});
-
-// Define an API endpoint to retrieve data within a date range
-app.get('/api/entries-in-range', (req, res) => {
-    const { start, end } = req.query;
-
-    db.all(
-        `SELECT * FROM sensor_data WHERE timestamp BETWEEN ? AND ? ORDER BY timestamp ASC`,
-        [start, end],
-        (err, rows) => {
-            if (err) {
-                console.error('Error retrieving data:', err.message);
-                return res.status(500).json({ error: 'Internal server error' });
-            }
-            res.json(rows);
-        }
-    );
 });
 
 // Start the server
