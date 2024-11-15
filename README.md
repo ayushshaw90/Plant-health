@@ -1,8 +1,12 @@
 # Plant-health
 
 
+## To run code in esp32
+Add the file `ESP32-code/full-code.ino` to arduino IDE and run it in ESP32
+
+
 ## To install the modules and run the code
-```
+```bash
 cd mqtt-node
 npm install
 node server.js
