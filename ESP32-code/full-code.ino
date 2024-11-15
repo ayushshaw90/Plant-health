@@ -10,7 +10,7 @@ const char* password = "shawayush3";
 const char* mqtt_broker = "broker.hivemq.com";
 const int mqtt_port = 1883;
 
-// MQTT topic where the data will be published
+// MQTT topics
 const char* mqtt_topic = "esp32/sensorData";
 const char* temperature_topic = "esp32/temperature";
 const char* humidity_topic = "esp32/humidity";
@@ -103,15 +103,20 @@ void loop() {
                    ", \"soil_moisture1\": " + String(soilMoisture1) + 
                    ", \"soil_moisture2\": " + String(soilMoisture2) + 
                    ", \"soil_moisture3\": " + String(soilMoisture3) + "}";
-  
-  
 
-  // Publish the JSON data to the HiveMQ MQTT topic
+  // Publish individual sensor data to respective topics
+  client.publish(temperature_topic, String(temperature).c_str());
+  client.publish(humidity_topic, String(humidity).c_str());
+  client.publish(soilMoisture1_topic, String(soilMoisture1).c_str());
+  client.publish(soilMoisture2_topic, String(soilMoisture2).c_str());
+  client.publish(soilMoisture3_topic, String(soilMoisture3).c_str());
+
+  // Publish the JSON data to the combined topic
   Serial.print("Publishing message: ");
   Serial.println(payload);
 
   bool success = client.publish(mqtt_topic, payload.c_str());
-  
+
   if (success) {
     Serial.println("Message published successfully to HiveMQ!");
   } else {
